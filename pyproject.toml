@@ -11,6 +11,9 @@ djangorestframework = "^3.15"
 drf-spectacular = "^0.29"
 django-configurations = "^2.5.1"
 python-dotenv = "^1.2.1"
+epam-indigo = "^1.33"
+pillow = "^11.0"
+djangorestframework-simplejwt = "^5.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.1.0"
