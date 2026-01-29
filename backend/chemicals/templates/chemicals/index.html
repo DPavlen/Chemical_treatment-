@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Structure Renderer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            padding: 10px 0;
+        }
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+        .row .form-group {
+            flex: 1;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.download {
+            background: #28a745;
+        }
+        button.download:hover {
+            background: #1e7e34;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            text-align: center;
+            display: none;
+        }
+        .result img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        .result-actions {
+            margin-top: 15px;
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+        .examples h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .examples code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .examples code:hover {
+            background: #007bff;
+            color: white;
+        }
+        .or-divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chemical Structure Renderer</h1>
+
+    <div class="container">
+        <form id="renderForm">
+            <div class="form-group">
+                <label for="smiles">SMILES String</label>
+                <input type="text" id="smiles" name="smiles" placeholder="e.g., CCO for ethanol">
+            </div>
+
+            <div class="or-divider">- OR -</div>
+
+            <div class="form-group">
+                <label for="molfile">Upload MOL File</label>
+                <input type="file" id="molfile" name="molfile" accept=".mol">
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="width">Width (px)</label>
+                    <input type="text" id="width" name="width" value="400">
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (px)</label>
+                    <input type="text" id="height" name="height" value="400">
+                </div>
+                <div class="form-group">
+                    <label for="format">Format</label>
+                    <select id="format" name="format">
+                        <option value="png">PNG</option>
+                        <option value="svg">SVG</option>
+                        <option value="pdf">PDF</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit">Render</button>
+        </form>
+
+        <div class="examples">
+            <h3>SMILES Examples (click to use):</h3>
+            <p>
+                <code onclick="setSmiles('CCO')">CCO</code> - Ethanol |
+                <code onclick="setSmiles('c1ccccc1')">c1ccccc1</code> - Benzene |
+                <code onclick="setSmiles('CC(=O)Oc1ccccc1C(=O)O')">Aspirin</code> |
+                <code onclick="setSmiles('Cn1cnc2c1c(=O)n(c(=O)n2C)C')">Caffeine</code>
+            </p>
+        </div>
+
+        <div class="result" id="result">
+            <h2>Result</h2>
+            <img id="resultImage" src="" alt="Chemical structure">
+            <div class="result-actions">
+                <button class="download" onclick="downloadImage()">Download</button>
+            </div>
+        </div>
+
+        <div class="error" id="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentBlob = null;
+        let currentFormat = 'png';
+
+        function setSmiles(value) {
+            document.getElementById('smiles').value = value;
+            document.getElementById('molfile').value = '';
+        }
+
+        document.getElementById('renderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const smiles = document.getElementById('smiles').value;
+            const molfile = document.getElementById('molfile').files[0];
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const format = document.getElementById('format').value;
+
+            currentFormat = format;
+
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+
+            if (!smiles && !molfile) {
+                showError('Please enter a SMILES string or upload a MOL file');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                if (smiles) formData.append('smiles', smiles);
+                if (molfile) formData.append('molfile', molfile);
+                formData.append('width', width);
+                formData.append('height', height);
+                formData.append('format', format);
+
+                const response = await fetch('/api/v1/answer/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to render molecule');
+                }
+
+                currentBlob = await response.blob();
+                const imageUrl = URL.createObjectURL(currentBlob);
+
+                document.getElementById('resultImage').src = imageUrl;
+                document.getElementById('result').style.display = 'block';
+
+            } catch (err) {
+                showError(err.message);
+            }
+        });
+
+        function downloadImage() {
+            if (!currentBlob) return;
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(currentBlob);
+            link.download = `molecule.${currentFormat}`;
+            link.click();
+        }
+
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

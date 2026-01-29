@@ -4,10 +4,8 @@ from pathlib import Path
 from configurations import Configuration
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -16,7 +14,6 @@ class Base(Configuration):
 
     SECRET_KEY = os.getenv(
         "SECRET_KEY",
-        "django-insecure-2voyr8o=x=t-m!69oxe4gdbbsb40dh5)3o7)6##1(1bz5&#=kj",
     )
 
     DEBUG = False
@@ -31,7 +28,64 @@ class Base(Configuration):
         "django.contrib.sessions",
         "django.contrib.messages",
         "django.contrib.staticfiles",
+        "rest_framework",
+        "rest_framework_simplejwt",
+        "drf_spectacular",
+        "chemicals",
     ]
+
+    # Django REST Framework
+    REST_FRAMEWORK = {
+        "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+        "DEFAULT_AUTHENTICATION_CLASSES": [
+            "rest_framework_simplejwt.authentication.JWTAuthentication",
+        ],
+        "DEFAULT_THROTTLE_CLASSES": [
+            "rest_framework.throttling.AnonRateThrottle",
+            "rest_framework.throttling.UserRateThrottle",
+        ],
+        "DEFAULT_THROTTLE_RATES": {
+            "anon": "100/hour",
+            "user": "1000/hour",
+        },
+    }
+
+    # JWT settings
+    from datetime import timedelta
+
+    SIMPLE_JWT = {
+        "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+        "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+        "AUTH_HEADER_TYPES": ("Bearer",),
+    }
+
+    # drf-spectacular settings
+    SPECTACULAR_SETTINGS = {
+        "TITLE": "Chemical Structure Rendering API",
+        "DESCRIPTION": (
+            "RESTful API service for rendering chemical structure images. "
+            "Supports SMILES strings and MOL file formats."
+        ),
+        "VERSION": "1.0.0",
+        "SERVE_INCLUDE_SCHEMA": False,
+        "SWAGGER_UI_SETTINGS": {
+            "deepLinking": True,
+            "persistAuthorization": True,
+            "displayOperationId": False,
+        },
+        "SECURITY": [{"Bearer": []}],
+        "COMPONENT_SPLIT_REQUEST": True,
+        "TAGS": [
+            {
+                "name": "Authentication",
+                "description": "User registration and JWT token management",
+            },
+            {
+                "name": "Chemical Rendering",
+                "description": "Chemical structure image rendering endpoints",
+            },
+        ],
+    }
 
     MIDDLEWARE = [
         "django.middleware.security.SecurityMiddleware",

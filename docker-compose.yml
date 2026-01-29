@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - DJANGO_CONFIGURATION=Development
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-key-change-in-production}
+    volumes:
+      - ./backend:/app/backend
+    restart: unless-stopped

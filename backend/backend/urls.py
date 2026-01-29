@@ -1,23 +1,53 @@
-"""
-URL configuration for backend project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
+from chemicals.views import UserRegistrationView, index_view
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+
+# Decorate JWT views with tags
+@extend_schema(tags=["Authentication"])
+class TaggedTokenObtainPairView(TokenObtainPairView):
+    pass
+
+
+@extend_schema(tags=["Authentication"])
+class TaggedTokenRefreshView(TokenRefreshView):
+    pass
+
 
 urlpatterns = [
+    path("", index_view, name="home"),
     path("admin/", admin.site.urls),
+    # Authentication
+    path("api/v1/auth/register/", UserRegistrationView.as_view(), name="register"),
+    path(
+        "api/v1/auth/token/",
+        TaggedTokenObtainPairView.as_view(),
+        name="token_obtain_pair",
+    ),
+    path(
+        "api/v1/auth/token/refresh/",
+        TaggedTokenRefreshView.as_view(),
+        name="token_refresh",
+    ),
+    # API
+    path("api/v1/", include("chemicals.urls")),
+    # Documentation
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "api/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
 ]
