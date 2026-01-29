@@ -81,5 +81,8 @@ class RequestLog(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        user_info = self.user.username if self.user else self.ip_address
-        return f"{self.method} {user_info} - {self.created_at:%Y-%m-%d %H:%M}"
+        user_info = getattr(self.user, "username", None) or self.ip_address or "Unknown"
+        created = (
+            self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "Unknown"
+        )
+        return f"{self.method} {user_info} - {created}"
