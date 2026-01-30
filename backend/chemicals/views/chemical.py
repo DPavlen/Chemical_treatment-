@@ -5,7 +5,7 @@ import time
 from chemicals.models import RequestLog
 from chemicals.schemas import get_schema, post_schema
 from chemicals.serializers import ChemicalPostSerializer, SmilesGetSerializer
-from chemicals.services import ChemicalRenderer, chemical_renderer
+from chemicals.services import ChemicalRenderer, get_chemical_renderer
 from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import status
@@ -13,14 +13,6 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-
-
-def get_client_ip(request):
-    """Extract client IP address from request."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR")
 
 
 def index_view(request):
@@ -54,7 +46,6 @@ class ChemicalRenderView(APIView):
         user = request.user if request.user.is_authenticated else None
         RequestLog.objects.create(
             user=user,
-            ip_address=get_client_ip(request),
             method=method,
             smiles=smiles,
             has_molfile=has_molfile,
@@ -80,7 +71,7 @@ class ChemicalRenderView(APIView):
         image_format = data.get("format") or ChemicalRenderer.DEFAULT_FORMAT
 
         try:
-            image_bytes, content_type = chemical_renderer.render_smiles(
+            image_bytes, content_type = get_chemical_renderer().render_smiles(
                 smiles=data["smiles"],
                 width=data.get("width"),
                 height=data.get("height"),
@@ -144,7 +135,7 @@ class ChemicalRenderView(APIView):
 
         try:
             if smiles:
-                image_bytes, content_type = chemical_renderer.render_smiles(
+                image_bytes, content_type = get_chemical_renderer().render_smiles(
                     smiles=smiles,
                     width=data.get("width"),
                     height=data.get("height"),
@@ -152,7 +143,7 @@ class ChemicalRenderView(APIView):
                 )
             else:
                 molfile_content = data["molfile"].read().decode("utf-8")
-                image_bytes, content_type = chemical_renderer.render_molfile(
+                image_bytes, content_type = get_chemical_renderer().render_molfile(
                     molfile_content=molfile_content,
                     width=data.get("width"),
                     height=data.get("height"),
