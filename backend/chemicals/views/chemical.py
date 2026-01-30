@@ -1,11 +1,6 @@
-"""API views for chemical structure rendering."""
-
-import time
-
-from chemicals.models import RequestLog
-from chemicals.schemas import get_schema, post_schema
+from chemicals.schemas import get_extended_schema, post_extended_schema
 from chemicals.serializers import ChemicalPostSerializer, SmilesGetSerializer
-from chemicals.services import ChemicalRenderer, get_chemical_renderer
+from chemicals.services import ChemicalRenderer, get_chemical_renderer, with_logging
 from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import status
@@ -29,39 +24,10 @@ class ChemicalRenderView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     throttle_classes = [AnonRateThrottle]
 
-    def _log_request(
-        self,
-        request,
-        method: str,
-        smiles: str | None = None,
-        has_molfile: bool = False,
-        width: int | None = None,
-        height: int | None = None,
-        image_format: str | None = None,
-        success: bool = True,
-        error_message: str | None = None,
-        response_time_ms: int | None = None,
-    ):
-        """Log API request to database."""
-        user = request.user if request.user.is_authenticated else None
-        RequestLog.objects.create(
-            user=user,
-            method=method,
-            smiles=smiles,
-            has_molfile=has_molfile,
-            width=width,
-            height=height,
-            image_format=image_format or "",
-            success=success,
-            error_message=error_message,
-            response_time_ms=response_time_ms,
-            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-        )
-
-    @get_schema
+    @get_extended_schema
+    @with_logging("GET")
     def get(self, request):
         """Render a chemical structure from SMILES string via GET request."""
-        start_time = time.time()
         serializer = SmilesGetSerializer(data=request.query_params)
 
         if not serializer.is_valid():
@@ -70,59 +36,35 @@ class ChemicalRenderView(APIView):
         data = serializer.validated_data
         image_format = data.get("format") or ChemicalRenderer.DEFAULT_FORMAT
 
-        try:
-            image_bytes, content_type = get_chemical_renderer().render_smiles(
-                smiles=data["smiles"],
-                width=data.get("width"),
-                height=data.get("height"),
-                image_format=image_format,
-            )
+        # Set logging data on request for decorator
+        request._log_data = {
+            "smiles": data["smiles"],
+            "width": data.get("width"),
+            "height": data.get("height"),
+            "image_format": image_format,
+        }
 
-            response = HttpResponse(image_bytes, content_type=content_type)
+        image_bytes, content_type = get_chemical_renderer().render_smiles(
+            smiles=data["smiles"],
+            width=data.get("width"),
+            height=data.get("height"),
+            image_format=image_format,
+        )
 
-            # Add download header if requested
-            download = request.query_params.get("download", "").lower() in ("true", "1")
-            if download:
-                filename = f"molecule.{image_format}"
-                response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response = HttpResponse(image_bytes, content_type=content_type)
 
-            # Log successful request
-            response_time_ms = int((time.time() - start_time) * 1000)
-            self._log_request(
-                request=request,
-                method="GET",
-                smiles=data["smiles"],
-                width=data.get("width"),
-                height=data.get("height"),
-                image_format=image_format,
-                success=True,
-                response_time_ms=response_time_ms,
-            )
+        # Add download header if requested
+        download = request.query_params.get("download", "").lower() in ("true", "1")
+        if download:
+            filename = f"molecule.{image_format}"
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-            return response
+        return response
 
-        except Exception as e:
-            response_time_ms = int((time.time() - start_time) * 1000)
-            self._log_request(
-                request=request,
-                method="GET",
-                smiles=data.get("smiles"),
-                width=data.get("width"),
-                height=data.get("height"),
-                image_format=image_format,
-                success=False,
-                error_message=str(e),
-                response_time_ms=response_time_ms,
-            )
-            return Response(
-                {"error": f"Failed to render molecule: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    @post_schema
+    @post_extended_schema
+    @with_logging("POST")
     def post(self, request):
         """Render a chemical structure from SMILES string or MOL file via POST request."""
-        start_time = time.time()
         serializer = ChemicalPostSerializer(data=request.data)
 
         if not serializer.is_valid():
@@ -133,54 +75,29 @@ class ChemicalRenderView(APIView):
         smiles = data.get("smiles")
         has_molfile = bool(data.get("molfile"))
 
-        try:
-            if smiles:
-                image_bytes, content_type = get_chemical_renderer().render_smiles(
-                    smiles=smiles,
-                    width=data.get("width"),
-                    height=data.get("height"),
-                    image_format=image_format,
-                )
-            else:
-                molfile_content = data["molfile"].read().decode("utf-8")
-                image_bytes, content_type = get_chemical_renderer().render_molfile(
-                    molfile_content=molfile_content,
-                    width=data.get("width"),
-                    height=data.get("height"),
-                    image_format=image_format,
-                )
+        # Set logging data on request for decorator
+        request._log_data = {
+            "smiles": smiles,
+            "has_molfile": has_molfile,
+            "width": data.get("width"),
+            "height": data.get("height"),
+            "image_format": image_format,
+        }
 
-            # Log successful request
-            response_time_ms = int((time.time() - start_time) * 1000)
-            self._log_request(
-                request=request,
-                method="POST",
+        if smiles:
+            image_bytes, content_type = get_chemical_renderer().render_smiles(
                 smiles=smiles,
-                has_molfile=has_molfile,
                 width=data.get("width"),
                 height=data.get("height"),
                 image_format=image_format,
-                success=True,
-                response_time_ms=response_time_ms,
             )
-
-            return HttpResponse(image_bytes, content_type=content_type)
-
-        except Exception as e:
-            response_time_ms = int((time.time() - start_time) * 1000)
-            self._log_request(
-                request=request,
-                method="POST",
-                smiles=smiles,
-                has_molfile=has_molfile,
+        else:
+            molfile_content = data["molfile"].read().decode("utf-8")
+            image_bytes, content_type = get_chemical_renderer().render_molfile(
+                molfile_content=molfile_content,
                 width=data.get("width"),
                 height=data.get("height"),
                 image_format=image_format,
-                success=False,
-                error_message=str(e),
-                response_time_ms=response_time_ms,
             )
-            return Response(
-                {"error": f"Failed to render molecule: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+
+        return HttpResponse(image_bytes, content_type=content_type)

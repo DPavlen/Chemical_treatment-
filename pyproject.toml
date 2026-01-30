@@ -24,6 +24,17 @@ mypy = "^1.8.0"
 pre-commit = "^3.6.0"
 isort = "^5.13.0"
 
+[tool.isort]
+profile = "black"
+line_length = 88
+skip_gitignore = true
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,3 @@
-"""Chemical rendering services using Indigo library."""
-
-
 class ChemicalRenderer:
     """Renders chemical structures to images using Indigo library."""
 
