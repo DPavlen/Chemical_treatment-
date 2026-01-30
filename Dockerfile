@@ -3,7 +3,7 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=backend.settings
-ENV DJANGO_CONFIGURATION=Production
+ENV DJANGO_CONFIGURATION=Development
 
 WORKDIR /app
 
@@ -30,8 +30,6 @@ RUN poetry config virtualenvs.create false \
 COPY . .
 
 WORKDIR /app/backend
-
-RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

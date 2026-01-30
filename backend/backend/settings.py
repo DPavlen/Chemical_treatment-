@@ -148,8 +148,12 @@ class Base(Configuration):
     USE_TZ = True
 
     # Static files (CSS, JavaScript, Images)
-    STATIC_URL = "static/"
+    STATIC_URL = "/static/"
     STATIC_ROOT = BASE_DIR / "staticfiles"
+
+    # Media files
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
     # Default primary key field type
     DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -159,7 +163,28 @@ class Development(Base):
     """Development configuration."""
 
     DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+
+    # Use PostgreSQL if DB_HOST is set, otherwise SQLite
+    @property
+    def DATABASES(self):
+        if os.getenv("DB_HOST"):
+            return {
+                "default": {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": os.getenv("POSTGRES_DB"),
+                    "USER": os.getenv("POSTGRES_USER"),
+                    "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+                    "HOST": os.getenv("DB_HOST", "db"),
+                    "PORT": os.getenv("DB_PORT", "5432"),
+                }
+            }
+        return {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 
 
 class Production(Base):

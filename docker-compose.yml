@@ -1,7 +1,7 @@
 version: "3.9"
 
 volumes:
-  static:
+  staticfiles:
   backend_static:
   backend_media:
   pg_data:
@@ -25,8 +25,8 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - backend_static:/app/static/
-      - backend_media:/app/media/
+      - backend_static:/app/backend/staticfiles/
+      - backend_media:/app/backend/media/
     ports:
       - "8000:8000"
     depends_on:
@@ -35,6 +35,10 @@ services:
       - .env
     networks:
       - chemical_treatment
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
 
   nginx:
     image: nginx:1.22.1
