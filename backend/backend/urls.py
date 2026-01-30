@@ -1,43 +1,19 @@
-from chemicals.views import UserRegistrationView, index_view
+from chemicals.views import index_view
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from drf_spectacular.utils import extend_schema
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-
-# Decorate JWT views with tags
-@extend_schema(tags=["Authentication"])
-class TaggedTokenObtainPairView(TokenObtainPairView):
-    pass
-
-
-@extend_schema(tags=["Authentication"])
-class TaggedTokenRefreshView(TokenRefreshView):
-    pass
-
 
 urlpatterns = [
     path("", index_view, name="home"),
     path("admin/", admin.site.urls),
-    # Authentication
-    path("api/v1/auth/register/", UserRegistrationView.as_view(), name="register"),
-    path(
-        "api/v1/auth/token/",
-        TaggedTokenObtainPairView.as_view(),
-        name="token_obtain_pair",
-    ),
-    path(
-        "api/v1/auth/token/refresh/",
-        TaggedTokenRefreshView.as_view(),
-        name="token_refresh",
-    ),
     # API
-    path("api/v1/", include("chemicals.urls")),
+    path("api/v1/", include("api.v1.urls")),
     # Documentation
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
@@ -46,8 +22,10 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path(
-        "api/v1/redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
-        name="redoc",
+        "api/v1/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
     ),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
