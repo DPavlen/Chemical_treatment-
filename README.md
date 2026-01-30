@@ -60,6 +60,14 @@ __Логирование в RequestLog:__
 - Все запросы автоматически сохраняются в базу данных
 - Записываются: пользователь, HTTP метод, SMILES, наличие MOL-файла, размеры, формат, статус, ошибка, время ответа (мс), User-Agent
 - Просмотр в Django Admin: http://localhost:8000/admin/chemicals/requestlog/
+- 
+__Примеры работы приложения:__
+<img width="1636" height="215" alt="docker" src="https://github.com/user-attachments/assets/dfe7552a-79cb-4cf4-9c9a-1c469ded7181" />
+<img width="1607" height="742" alt="Swagger" src="https://github.com/user-attachments/assets/7664f892-b2e8-4df8-8471-68c568521e51" />
+<img width="1310" height="717" alt="answer CCO" src="https://github.com/user-attachments/assets/4d2452a4-4e50-4dd4-a853-eade61257909" />
+<img width="1310" height="848" alt="answer 2" src="https://github.com/user-attachments/assets/ae6d64d3-6fe3-4562-906c-71f7cf074c1f" />
+<img width="1913" height="795" alt="adminka" src="https://github.com/user-attachments/assets/76bae7b8-db10-4f2c-aa38-74338900532e" />
+
 
 ## 3. Стек технологий <a id=3></a>
 
