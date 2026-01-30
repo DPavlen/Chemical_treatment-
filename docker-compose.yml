@@ -1,14 +1,51 @@
+version: "3.9"
+
+volumes:
+  static:
+  backend_static:
+  backend_media:
+  pg_data:
+
+networks:
+  chemical_treatment:
+    driver: bridge
+
 services:
-  web:
-    build: .
+
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    networks:
+      - chemical_treatment
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - backend_static:/app/static/
+      - backend_media:/app/media/
     ports:
       - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=backend.settings
-      - DJANGO_CONFIGURATION=Development
-      - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-      - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-key-change-in-production}
+    depends_on:
+      - db
+    env_file:
+      - .env
+    networks:
+      - chemical_treatment
+
+  nginx:
+    image: nginx:1.22.1
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
     volumes:
-      - ./backend:/app/backend
-    restart: unless-stopped
+      - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
+      - backend_static:/backend_static/
+      - backend_media:/backend_media/
+    networks:
+      - chemical_treatment
