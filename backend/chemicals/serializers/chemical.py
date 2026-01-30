@@ -1,5 +1,3 @@
-"""Serializers for chemical structure API."""
-
 from chemicals.services import ChemicalRenderer
 from rest_framework import serializers
 

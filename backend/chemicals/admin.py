@@ -10,7 +10,6 @@ class RequestLogAdmin(admin.ModelAdmin):
     list_display = [
         "id",
         "user",
-        "ip_address",
         "method",
         "smiles_preview",
         "image_format",
@@ -26,14 +25,12 @@ class RequestLogAdmin(admin.ModelAdmin):
         "created_at",
     ]
     search_fields = [
-        "ip_address",
         "smiles",
         "user_agent",
         "user__username",
     ]
     readonly_fields = [
         "user",
-        "ip_address",
         "method",
         "smiles",
         "has_molfile",
@@ -52,7 +49,6 @@ class RequestLogAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "user",
-                    "ip_address",
                     "method",
                     "created_at",
                 ),

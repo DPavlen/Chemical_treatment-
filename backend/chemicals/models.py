@@ -17,10 +17,6 @@ class RequestLog(models.Model):
         related_name="request_logs",
         verbose_name="User",
     )
-    ip_address = models.GenericIPAddressField(
-        verbose_name="IP Address",
-        db_index=True,
-    )
     method = models.CharField(
         max_length=4,
         choices=Method.choices,
@@ -81,7 +77,7 @@ class RequestLog(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        user_info = getattr(self.user, "username", None) or self.ip_address or "Unknown"
+        user_info = getattr(self.user, "username", None) or "Anonymous"
         created = (
             self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "Unknown"
         )

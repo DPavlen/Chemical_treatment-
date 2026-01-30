@@ -15,7 +15,7 @@ IMAGE_RESPONSES = {
     400: {"description": "Invalid input or parameters"},
 }
 
-get_schema = extend_schema(
+get_extended_schema = extend_schema(
     tags=["Chemical Rendering"],
     summary="Render chemical structure from SMILES",
     description="Generate an image of a chemical structure from a SMILES string.",
@@ -77,7 +77,7 @@ get_schema = extend_schema(
     responses=IMAGE_RESPONSES,
 )
 
-post_schema = extend_schema(
+post_extended_schema = extend_schema(
     tags=["Chemical Rendering"],
     summary="Render chemical structure from SMILES or MOL file",
     description=(
