@@ -43,56 +43,15 @@ class RequestLogAdmin(admin.ModelAdmin):
         "user_agent",
         "created_at",
     ]
-    fieldsets = (
-        (
-            "Request Info",
-            {
-                "fields": (
-                    "user",
-                    "method",
-                    "created_at",
-                ),
-            },
-        ),
-        (
-            "Chemical Data",
-            {
-                "fields": (
-                    "smiles",
-                    "has_molfile",
-                    "width",
-                    "height",
-                    "image_format",
-                ),
-            },
-        ),
-        (
-            "Result",
-            {
-                "fields": (
-                    "success",
-                    "error_message",
-                    "response_time_ms",
-                ),
-            },
-        ),
-        (
-            "Additional Info",
-            {
-                "fields": ("user_agent",),
-            },
-        ),
-    )
     date_hierarchy = "created_at"
     ordering = ["-created_at"]
 
+    @admin.display(description="SMILES")
     def smiles_preview(self, obj):
         """Show truncated SMILES string."""
         if obj.smiles:
             return obj.smiles[:30] + "..." if len(obj.smiles) > 30 else obj.smiles
         return "-"
-
-    smiles_preview.short_description = "SMILES"
 
     def has_add_permission(self, request):
         """Disable manual creation of logs."""

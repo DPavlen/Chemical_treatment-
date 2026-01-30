@@ -77,8 +77,9 @@ class RequestLog(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        user_info = getattr(self.user, "username", None) or "Anonymous"
-        created = (
-            self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "Unknown"
+        smiles_short = (
+            self.smiles[:20] + "..."
+            if self.smiles and len(self.smiles) > 20
+            else (self.smiles or "-")
         )
-        return f"{self.method} {user_info} - {created}"
+        return f"{self.method} | {smiles_short} | {self.image_format or '-'}"
