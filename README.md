@@ -80,7 +80,7 @@ __Логирование в RequestLog:__
 Склонируйте проект из репозитория:
 
 ```shell
-git clone git@github.com:DPavlen/Chemical-treatment.git
+git clone git@github.com:DPavlen/Chemical_treatment-.git
 ```
 
 Перейдите в директорию проекта:
